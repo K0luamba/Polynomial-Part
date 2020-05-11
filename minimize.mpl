@@ -1,6 +1,7 @@
-local minimize := proc(eqVec) #eqVec - список из правой части, полиномов по порядку степеней
+#eqVec - список из правой части, полиномов по порядку степеней, comments - вывод комментариев по ходу решения
+local minimize := proc(eqVec, comments := true)
 	description "Минимизация правой части уравнения и выделение полиномиального слагаемого решения";
-    local prevEq, leftPart, currEq, currEqVec, i, j, k, w, maxV, m, transLeft, p, subsY, needStop, polPart;
+    local prevEq, leftPart, currEq, currEqVec, i, j, k, w, maxV, m, transLeft, a, subsY, needStop, polPart;
     currEqVec := eqVec;
     polPart := 0;
     currEq := 0;
@@ -14,14 +15,18 @@ local minimize := proc(eqVec) #eqVec - список из правой части
         end do;
         prevEq := currEq;
         currEq := leftPart = currEqVec[1];
-        print("Текущее уравнение:");
-        print(currEq);
+        if comments then 
+        	print("Текущее уравнение:");
+        	print(currEq);
+        end if;
 
 		#проверка случая, когда в правой части есть член со степенью, меньшей 0
     	if ldegree(currEqVec[1]) < 0 or degree(currEqVec[1]) < 0 then
-    		print("Алгоритм прекратил работу по 2ому условию остановки.");
+    		if comments then 
+    			print("Алгоритм прекратил работу по 2ому условию остановки.") 
+    		end if;
     		polPart := polPart - subsY; #учитываем, что последнее слагаемое полиномаильной части лишнее
-    		if polPart <> 0 then 
+    		if polPart <> 0 and comments then 
 	        	print("Выделили полиномиальное слагаемое решения.");
 	        end if;
     		return [subs(y=z, prevEq), polPart];
@@ -46,22 +51,26 @@ local minimize := proc(eqVec) #eqVec - список из правой части
 	        	end if;
 	        end do;
 	        if needStop then
-        		print("Алгоритм прекратил работу по 1ому условию остановки.");
-        		if polPart <> 0 then
+	        	if comments then
+        			print("Алгоритм прекратил работу по 1ому условию остановки.");
+        		end if;
+        		if polPart <> 0 and comments then
 		        	print("Выделили полиномиальное слагаемое решения.");
 		        end if;
         		return [subs(y=z, currEq), polPart];
         	end if;
 	    end if;
 
-        # поиск величины p
+        # поиск величины a
         transLeft := PDEtools:-dsubs(y(x) = x^m, leftPart);
-        p := lcoeff(currEqVec[1]) / lcoeff(transLeft);
+        a := lcoeff(currEqVec[1]) / lcoeff(transLeft);
 
         # производим замену (т.е. изменение вектора уравнения currEqVec)
-        subsY := p*x^m;
-        print("Производим замену:");
-        print(y(x) = subsY + z(x));
+        subsY := a*x^m;
+        if comments then
+	        print("Производим замену:");
+	        print(y(x) = subsY + z(x));
+	    end if;
         polPart := polPart + subsY; #учитываем замену для составления полиномиальной части решения
 	        currEqVec[1] := currEqVec[1] - subsY*currEqVec[2];
         for i from 3 to nops(currEqVec) do
@@ -76,7 +85,8 @@ local minimize := proc(eqVec) #eqVec - список из правой части
     	leftPart := leftPart + currEqVec[i]*diff(y(x), x$(i-2));
     end do;
     currEq := leftPart = currEqVec[1];
-
-    print("Получили полиномиальное решение.");
+    if comments then
+    	print("Получили полиномиальное решение.");
+	end if;
     return [subs(y=z, currEq), polPart];
 end proc;
